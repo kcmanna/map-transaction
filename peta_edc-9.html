@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map Transaction — BO Manna</title>
+<meta name="theme-color" content="#0857C3">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--nb:#0857C3;--cb:#307FE2;--mb:#71C5EB;--bg:#eef5fc;--ink:#10243e;--mut:#5a6f8a;--line:#d3e2f3}
+*{box-sizing:border-box}body{margin:0;font:15px/1.4 system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{position:relative;overflow:hidden;color:#fff;padding:18px 16px 20px;background:linear-gradient(115deg,var(--nb) 0%,var(--cb) 55%,var(--mb) 100%);background-size:220% 220%;animation:flow 14s ease-in-out infinite}
+header>h1,header>.asof{position:relative;z-index:1}
+.orb{position:absolute;border-radius:50%;background:rgba(255,255,255,.14);animation:float 9s ease-in-out infinite}
+.o1{width:150px;height:150px;right:-30px;top:-60px}.o2{width:90px;height:90px;right:140px;bottom:-45px;animation-delay:-3s;background:rgba(113,197,235,.35)}.o3{width:60px;height:60px;left:55%;top:-20px;animation-delay:-6s}
+h1{margin:0;font-size:21px;letter-spacing:.4px;animation:rise .7s both}.asof{margin-top:4px;font-size:13px;opacity:.92;animation:rise .7s .1s both}
+.wrap{max-width:1100px;margin:0 auto;padding:14px 12px}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.sum>div{background:#fff;border-radius:12px;padding:11px 12px;border-left:5px solid var(--nb);box-shadow:0 2px 10px rgba(8,87,195,.10);animation:rise .6s both;transition:transform .2s,box-shadow .2s}
+.sum>div:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(8,87,195,.18)}
+.sum>div:nth-child(1){animation-delay:0.05s}.sum>div:nth-child(2){animation-delay:0.10s}.sum>div:nth-child(3){animation-delay:0.15s}.sum>div:nth-child(4){animation-delay:0.20s}.sum>div:nth-child(5){animation-delay:0.25s}.sum>div:nth-child(6){animation-delay:0.30s}.sum>div:nth-child(7){animation-delay:0.35s}.sum>div:nth-child(8){animation-delay:0.40s}.sum>div:nth-child(9){animation-delay:0.45s}.sum>div:nth-child(10){animation-delay:0.50s}.sum>div:nth-child(11){animation-delay:0.55s}.sum>div:nth-child(12){animation-delay:0.60s}.sum>div:nth-child(13){animation-delay:0.65s}.sum>div:nth-child(14){animation-delay:0.70s}
+.sum b{display:block;font-size:26px;color:var(--nb)}.sum span{font-size:12px;color:var(--mut)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-bottom:12px;background:#fff;border-radius:12px;padding:10px;box-shadow:0 2px 10px rgba(8,87,195,.08);animation:rise .6s .3s both}
+label{font-size:12px;color:var(--mut);display:flex;flex-direction:column;gap:2px}
+select,input{font:inherit;padding:7px;border:1px solid var(--line);border-radius:8px;background:#fff;max-width:230px;transition:border-color .2s,box-shadow .2s}
+select:focus,input:focus{outline:0;border-color:var(--cb);box-shadow:0 0 0 3px rgba(113,197,235,.45)}
+.chk{flex-direction:row;align-items:center;gap:6px;font-size:14px;color:var(--ink);padding-bottom:8px}.chk input{width:auto;accent-color:var(--nb)}
+#map{height:62vh;min-height:360px;border-radius:14px;border:3px solid #fff;box-shadow:0 6px 22px rgba(8,87,195,.18);animation:rise .7s .35s both}
+.dq{padding:6px 12px;border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;margin-left:auto}
+.dq.ok{background:#dff3e7;color:#1a8f4c}.dq.err{background:#fde6e3;color:#c0392b;animation:pulse 2s infinite}
+#errs{display:none;background:#fff;border:1px solid #e6a8a1;border-radius:12px;padding:8px 12px;margin-bottom:10px;max-height:160px;overflow:auto;font-size:13px}
+.leg{font-size:12px;color:var(--mut);margin-top:6px}
+.qm{width:12px;height:12px;background:var(--cb);transform:rotate(45deg);border:1.5px solid #fff;animation:qpop .5s both}
+path.pop{transform-box:fill-box;transform-origin:center;animation:pop .45s ease-out both}
+.d1{animation-delay:.06s!important}.d2{animation-delay:.12s!important}.d3{animation-delay:.18s!important}.d4{animation-delay:.24s!important}
+.leaflet-popup-content-wrapper{border-radius:12px}.leaflet-popup-content b{color:var(--nb)}
+#unmL{max-height:320px;overflow:auto}details{background:#fff;border-radius:12px;padding:9px 13px;margin-top:10px;font-size:13px;box-shadow:0 2px 10px rgba(8,87,195,.08)}summary{cursor:pointer;font-weight:600;color:var(--nb)}
+table{border-collapse:collapse;margin:8px 16px 8px 0;display:inline-table;vertical-align:top}td,th{border:1px solid var(--line);padding:3px 8px;text-align:left}th{background:#e8f1fc;color:var(--nb)}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin:0 4px 0 10px;vertical-align:-1px}
+#msg{padding:30px;text-align:center;color:var(--mut);animation:pulse2 1.4s infinite}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes flow{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(14px)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.35)}50%{box-shadow:0 0 0 6px rgba(192,57,43,0)}}
+@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes pop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
+@keyframes qpop{from{opacity:0;transform:rotate(45deg) scale(.2)}to{opacity:1;transform:rotate(45deg) scale(1)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<header><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i><h1>MAP TRANSACTION — BO MANNA</h1><div class="asof" id="asof">DATA AS OF: -</div></header>
+<div class="wrap">
+<div class="sum" id="sum"></div>
+<div class="bar">
+<label>Tampilkan<select id="fJ"><option value="">Semua (EDC + QRIS)</option><option value="E">EDC saja</option><option value="Q">QRIS saja</option></select></label>
+<label>Sales Volume QRIS<select id="fQV"></select></label>
+<label id="lS">Sales Volume EDC<select id="fT"></select></label>
+<label id="lK" style="display:none">Kecamatan<select id="fK"></select></label>
+<label>Cari merchant / MID / TID<input id="fQ"></label>
+<label class="chk"><input type="checkbox" id="fO" checked>EDC bank lain</label>
+<label>Data (Excel .xlsx atau CSV)<input type="file" id="file" accept=".xlsx,.xls,.csv" multiple></label>
+<span class="dq" id="dq"></span>
+</div>
+<div id="errs"></div>
+<div id="msg">Memuat data …</div>
+<div id="map" style="display:none"></div>
+<details><summary>Rekap per kecamatan &amp; unit kerja</summary><div id="rkp"></div></details>
+<details><summary id="unmS">Perlu koordinat / pemeriksaan</summary><div id="unmL"></div></details>
+<div class="leg" id="sM"></div><div class="leg" id="leg"></div>
+</div>
+<script>
+/* ===== PENGATURAN (jarang diubah) ===== */
+const CONFIG={xlsx:"master_edc.xlsx",csv:"master_edc.csv",csvOther:"edc_bank_lain.csv",
+  latRange:[-5.3,-3.6],lonRange:[102.0,104.0],center:[-4.46,102.93],zoom:11,otherColor:"#8a949e",
+  qLevels:[{k:"QRIS < Rp50 ribu atau kosong",c:"#d63031",f:v=>v<50000},{k:"QRIS ≥ Rp50 ribu",c:"#27ae60",f:()=>true}],
+  levels:[ // urut: merah → hijau. Batas dalam rupiah.
+    {k:"Tidak aktif",c:"#d63031",f:v=>v<=0},
+    {k:"< 5 juta",c:"#f39c12",f:v=>v<5e6},
+    {k:"5 – 14 juta",c:"#f1c40f",f:v=>v<15e6},
+    {k:"≥ 15 juta",c:"#27ae60",f:()=>true}]};
+const REQ=["NAMA_MERCHANT","MID","TID","ALAMAT","KECAMATAN","SALES_VOLUME"],REQO=["BANK","ALAMAT"];
+let B=[],O=[],eB=[],eO=[],map,lyB,lyO,lyQ,asof=null,Q=[],C=[],eQ=[],wQ=[],cen={},cmE={},cmQ={},qs=[0,0,0,0,0,0];
+const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const rp=v=>"Rp "+v.toLocaleString("id-ID"),lvl=v=>CONFIG.levels.findIndex(l=>l.f(v));
+const num=s=>{const d=String(s).replace(/,\d{1,2}$/,"").replace(/[^\d]/g,"");return d===""?NaN:+d};
+
+function parseCSV(t){
+  t=t.replace(/^\uFEFF/,"");const f=t.split(/\r?\n/)[0],d=(f.split(";").length>f.split(",").length)?";":",";
+  const out=[];let r=[],c="",q=false;
+  for(let i=0;i<t.length;i++){const ch=t[i];
+    if(q){if(ch=='"'){if(t[i+1]=='"'){c+='"';i++}else q=false}else c+=ch}
+    else if(ch=='"')q=true;else if(ch==d){r.push(c);c=""}
+    else if(ch=="\n"||ch=="\r"){if(ch=="\r"&&t[i+1]=="\n")i++;r.push(c);out.push(r);r=[];c=""}
+    else c+=ch}
+  if(c!==""||r.length){r.push(c);out.push(r)}
+  const h=out.shift().map(x=>x.trim().toUpperCase().replace(/\s+/g,"_"));
+  return out.filter(x=>x.some(v=>v.trim()!="")).map((x,n)=>{const o={_line:n+2};h.forEach((k,i)=>o[k]=(x[i]||"").trim());return o});
+}
+function validate(data,req,tag,idKey){
+  const e=[],seen={};if(!data.length)return[tag+"File kosong atau tidak terbaca"];
+  const miss=req.concat(["LATITUDE","LONGITUDE"]).filter(k=>!(k in data[0]));
+  if(miss.length)return[tag+"Kolom tidak ditemukan: "+miss.join(", ")];
+  data.forEach(r=>{
+    const p=tag+"Baris "+r._line+": ";r._bad=false;const n0=e.length;
+    req.forEach(k=>{if(!r[k]){e.push(p+k+" kosong");r._bad=true}});
+    if(idKey&&r[idKey]){if(seen[r[idKey]]){e.push(p+idKey+" duplikat dengan baris "+seen[r[idKey]]);r._bad=true}else seen[r[idKey]]=r._line}
+    if("SALES_VOLUME"in r&&r.SALES_VOLUME){r.sv=num(r.SALES_VOLUME);if(isNaN(r.sv)){e.push(p+"SALES_VOLUME harus angka");r._bad=true}}
+    r._nc=!r.LATITUDE&&!r.LONGITUDE;
+    if(!r._nc){const la=+r.LATITUDE.replace(",","."),lo=+r.LONGITUDE.replace(",",".");r.la=la;r.lo=lo;
+      if(!r.LATITUDE||!r.LONGITUDE||isNaN(la)||isNaN(lo)||la<CONFIG.latRange[0]||la>CONFIG.latRange[1]||lo<CONFIG.lonRange[0]||lo>CONFIG.lonRange[1]){e.push(p+"koordinat tidak valid / di luar area (cek minus, titik desimal, Lat/Long tertukar)");r._bad=true}}
+    r._why=e.slice(n0).map(x=>x.slice(p.length)).join("; ")});return e;
+}
+function initMap(){
+  if(map)return;$("msg").style.display="none";$("map").style.display="block";
+  map=L.map("map").setView(CONFIG.center,CONFIG.zoom);
+  const o={maxZoom:18,attribution:"Tiles © Esri"},S="https://server.arcgisonline.com/ArcGIS/rest/services/",
+  j=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}),
+  e=L.tileLayer(S+"World_Street_Map/MapServer/tile/{z}/{y}/{x}",o),s=L.tileLayer(S+"World_Imagery/MapServer/tile/{z}/{y}/{x}",o);
+  j.addTo(map);L.control.layers({"OpenStreetMap":j,"Jalan (Esri)":e,"Satelit (Esri)":s},null,{position:"topright"}).addTo(map);
+  lyO=L.layerGroup().addTo(map);lyQ=L.layerGroup().addTo(map);lyB=L.layerGroup().addTo(map);setTimeout(()=>map.invalidateSize(),50);
+}
+function status(){
+  const all=eB.concat(eO,eQ),dq=$("dq"),nc=B.filter(r=>!r._bad&&r._nc).length;
+  dq.className="dq "+(all.length?"err":"ok");
+  dq.textContent="Data Quality Check: "+(all.length?"Error ("+all.length+")":"OK")+(wQ.length?" · "+wQ.length+" peringatan":"")+(nc?" · "+nc+" EDC belum ada koordinat":"");
+  const t=all.concat(wQ.map(x=>"⚠ "+x));
+  $("errs").innerHTML=t.length?"<b>Periksa di Excel, lalu muat ulang file:</b><br>"+t.map(esc).join("<br>"):"";
+  $("errs").style.display=t.length?"block":"none";
+}
+function loadB(t,d){B=parseCSV(t);eB=validate(B,REQ,"[BRI] ","TID");asof=d;
+  const ks=[...new Set(B.filter(r=>!r._bad).map(r=>r.KECAMATAN))].sort();
+  $("fK").innerHTML='<option value="">Semua</option>'+ks.map(v=>"<option>"+esc(v)+"</option>").join("");$("lK").style.display=ks.length?"flex":"none";
+  initMap();status();draw(true)}
+const isK=st=>/^KANDIDAT/.test(st||"");
+function setCoords(tc){C=tc?parseCSV(tc):[];cmE={};cmQ={};
+  C.forEach(r=>{const k=(r.KUNCI||r.MERCHANT_ID||r.TID||"").trim(),la=fl(r.LATITUDE),lo=fl(r.LONGITUDE);if(!k||!okc(la,lo)||isK(String(r.STATUS||"").toUpperCase()))return;
+    const o={la,lo,st:(r.STATUS||"VERIFIKASI_MANUAL").toUpperCase()},j=(r.JENIS||(r.MERCHANT_ID?"QRIS":"")).toUpperCase();(j=="EDC"?cmE:cmQ)[k]=o});
+  B.forEach(r=>{if(r._nc&&!r._bad&&cmE[r.TID]){const o=cmE[r.TID];r.la=o.la;r.lo=o.lo;r._nc=false;r._st=o.st}})}
+const qlv=r=>{const v=num(r.SALES_VOLUME);return isNaN(v)?0:CONFIG.qLevels.findIndex(l=>l.f(v))},kk=s=>String(s||"").trim().toLowerCase(),fl=s=>+String(s).replace(",","."),
+okc=(la,lo)=>!isNaN(la)&&!isNaN(lo)&&la>=CONFIG.latRange[0]&&la<=CONFIG.latRange[1]&&lo>=CONFIG.lonRange[0]&&lo<=CONFIG.lonRange[1];
+function validateQ(d){const e=[],w=[],seen={},req=["NAMA_MERCHANT","MERCHANT_ID","UNIT_KERJA","ALAMAT","KECAMATAN","SALES_VOLUME"];
+  if(!d.length)return{e:["[QRIS] Sheet kosong"],w};const miss=req.filter(k=>!(k in d[0]));
+  if(miss.length){d.length=0;return{e:["[QRIS] Kolom tidak ditemukan: "+miss.join(", ")+" (format sumber berubah?)"],w}}
+  d.forEach(r=>{const p="[QRIS] Baris "+r._line+": ";r._ex=false;r._own=false;
+    if(!r.MERCHANT_ID){r._ex=true;r._exWhy="Merchant ID kosong";e.push(p+"Merchant ID kosong (tidak diproses)")}
+    else if(seen[r.MERCHANT_ID]){r._ex=true;r._exWhy="Merchant ID duplikat (baris "+seen[r.MERCHANT_ID]+")";e.push(p+"Merchant ID duplikat dengan baris "+seen[r.MERCHANT_ID]+" (tidak diproses)")}else seen[r.MERCHANT_ID]=r._line;
+    ["NAMA_MERCHANT","KECAMATAN","ALAMAT"].forEach(k=>{if(!r[k])w.push(p+k+" kosong")});
+    if(!r.SALES_VOLUME)w.push(p+"SALES_VOLUME kosong");else if(isNaN(num(r.SALES_VOLUME)))w.push(p+"SALES_VOLUME bukan angka (ditampilkan apa adanya)");
+    if(r.LATITUDE||r.LONGITUDE){const la=fl(r.LATITUDE),lo=fl(r.LONGITUDE);if(okc(la,lo)){r._own=true;r._la=la;r._lo=lo}else w.push(p+"koordinat tidak valid, diabaikan")}});
+  return{e,w}}
+function loadQ(tq,tc){if(tc!==undefined)setCoords(tc);Q=parseCSV(tq);const v=validateQ(Q);eQ=v.e;wQ=v.w;
+  Q.forEach(r=>{if(r._ex){r._cat="X";r._why=r._exWhy;return}
+    const p=r._own?{la:r._la,lo:r._lo,st:"SUMBER"}:cmQ[r.MERCHANT_ID];if(p){r._cat="M";r._p=p;return}
+    r._cat="U";r._why="koordinat belum ada / tidak valid / belum terverifikasi"});
+  const ks=[...new Set(B.filter(r=>!r._bad).concat(Q.filter(r=>r._cat!="X")).map(r=>r.KECAMATAN).filter(Boolean))].sort(),cur=$("fK").value;
+  $("fK").innerHTML='<option value="">Semua</option>'+ks.map(v=>"<option>"+esc(v)+"</option>").join("");$("fK").value=cur;$("lK").style.display="flex";
+  if(map){status();draw(true)}}
+function drawQ(mode){lyQ.clearLayers();const kc=$("fK").value,q=$("fQ").value.trim().toLowerCase(),seen={},pts=[],n=[0,0,0,0,0,0],qv=$("fQV").value;
+  Q.forEach(r=>{if(kc&&r.KECAMATAN!=kc)return;if(q&&!(r.NAMA_MERCHANT+" "+r.ALAMAT+" "+r.UNIT_KERJA).toLowerCase().includes(q))return;
+    if(qv!==""&&String(qlv(r))!==qv)return;
+    const l=qlv(r);if(r._cat!="X"){n[0]++;n[1+l]++}
+    if(r._cat=="M")n[3]++;else n[5]++;
+    if(mode=="E"||r._cat!="M")return;
+    const c=CONFIG.qLevels[l].c,key=r._p.la.toFixed(5)+","+r._p.lo.toFixed(5),i=(seen[key]=(seen[key]||0)+1)-1,st=0.00009,ring=Math.floor(i/8)+1,a=i*Math.PI/4,
+    la=i?r._p.la+st*ring*Math.sin(a):r._p.la,lo=i?r._p.lo+st*ring*Math.cos(a):r._p.lo;
+    L.marker([la,lo],{icon:L.divIcon({className:"",html:'<div class="qm d'+(pts.length%5)+'" style="background:'+c+'"></div>',iconSize:[14,14]})}).addTo(lyQ)
+     .bindPopup("<b>"+esc(r.NAMA_MERCHANT)+"</b><br>Unit Kerja: "+esc(r.UNIT_KERJA)+"<br>Alamat: "+esc(r.ALAMAT)+"<br>Kecamatan: "+esc(r.KECAMATAN)+"<br>Sales Volume: <b>"+esc(r.SALES_VOLUME)+"</b> ("+(isNaN(num(r.SALES_VOLUME))?"sales volume kosong / tidak terbaca":CONFIG.qLevels[l].k)+")");
+    pts.push([la,lo])});
+  [0,1,2].forEach(i=>cnum("q"+i,n[i]));qs=n;return pts}
+function rekap(){const k={},u={};
+  B.filter(r=>!r._bad).forEach(r=>{(k[r.KECAMATAN]=k[r.KECAMATAN]||[0,0])[0]++});
+  Q.filter(r=>r._cat!="X").forEach(r=>{const x=r.KECAMATAN||"(kosong)",y=r.UNIT_KERJA||"(kosong)";(k[x]=k[x]||[0,0])[1]++;u[y]=(u[y]||0)+1});
+  const t=(h,rows)=>"<table><tr>"+h.map(x=>"<th>"+x+"</th>").join("")+"</tr>"+rows.map(r=>"<tr>"+r.map(x=>"<td>"+esc(x)+"</td>").join("")+"</tr>").join("")+"</table>";
+  $("rkp").innerHTML=t(["Kecamatan","EDC BRI","QRIS"],Object.keys(k).sort().map(x=>[x,k[x][0],k[x][1]]))+t(["Unit Kerja (QRIS)","Merchant"],Object.keys(u).sort().map(x=>[x,u[x]]));
+  const bs=B.filter(r=>r._bad||r._nc).map(r=>["EDC BRI",r.NAMA_MERCHANT,r.TID,r.KECAMATAN,r._bad?r._why:"koordinat belum ada"]),
+    os=O.filter(r=>r._bad||r._nc).map(r=>["EDC Bank Lain",r.NAMA_MERCHANT||"-",r.BANK,"-",r._bad?r._why:"koordinat belum ada"]),
+    qs=Q.filter(r=>r._cat!="M").map(r=>["QRIS",r.NAMA_MERCHANT,r.MERCHANT_ID,r.KECAMATAN,r._why]),all=bs.concat(os,qs);
+  $("unmS").textContent="Perlu koordinat / pemeriksaan ("+all.length+": EDC BRI "+bs.length+" · Bank Lain "+os.length+" · QRIS "+qs.length+")";
+  $("unmL").innerHTML=all.length?t(["Sumber","Nama Merchant","TID / Bank / Merchant ID","Kecamatan","Keterangan"],all):"Tidak ada."}
+function loadO(t){O=parseCSV(t);eO=validate(O,REQO,"[Bank lain] ");if(map){status();draw(false)}else pendingO=true}
+let pendingO=false;
+function draw(fit){
+  if(!map)return;
+  const t=$("fT").value,kc=$("fK").value,q=$("fQ").value.trim().toLowerCase();
+  $("asof").textContent="DATA AS OF: "+(asof?asof.toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"}):"-");
+  const mode=$('fJ').value;lyB.clearLayers();lyO.clearLayers();const cnt=CONFIG.levels.map(()=>0),seen={},pts=[];let tot=0,NC=0;
+  B.filter(r=>!r._bad).forEach(r=>{
+    const L_=lvl(r.sv);
+    if(t!==""&&+t!==L_)return;if(kc&&r.KECAMATAN!=kc)return;
+    if(q&&!(r.NAMA_MERCHANT+" "+r.MID+" "+r.TID+" "+r.ALAMAT).toLowerCase().includes(q))return;
+    cnt[L_]++;tot++;if(r._nc){NC++;return}
+    const key=r.la.toFixed(5)+","+r.lo.toFixed(5),n=seen[key]=(seen[key]||0)+1,k2=n-1,ring=Math.floor(k2/8)+1,a=k2*Math.PI/4,
+    la=n>1?r.la+0.00009*ring*Math.sin(a):r.la,lo=n>1?r.lo+0.00009*ring*Math.cos(a):r.lo,lv=CONFIG.levels[L_];
+    L.circleMarker([la,lo],{radius:8,color:"#fff",weight:1.5,fillColor:lv.c,fillOpacity:.95,className:"pop d"+(pts.length%5)}).addTo(lyB)
+     .bindPopup("<b>"+esc(r.NAMA_MERCHANT)+"</b><br>MID: "+esc(r.MID)+"<br>TID: "+esc(r.TID)+"<br>Alamat: "+esc(r.ALAMAT)+"<br>Kecamatan: "+esc(r.KECAMATAN)+"<br>Total Sales Volume: <b>"+rp(r.sv)+"</b> ("+lv.k+")");
+    pts.push([la,lo]);
+  });
+  let no=0;
+  if($("fO").checked)O.filter(r=>!r._bad&&!r._nc).forEach(r=>{no++;
+    L.circleMarker([r.la,r.lo],{radius:6,color:"#fff",weight:1,fillColor:CONFIG.otherColor,fillOpacity:.9}).addTo(lyO)
+     .bindPopup("<b>"+esc(r.BANK)+"</b>"+(r.NAMA_MERCHANT?"<br>"+esc(r.NAMA_MERCHANT):"")+"<br>"+esc(r.ALAMAT))});
+  cnum("sT",tot);CONFIG.levels.forEach((l,i)=>cnum("c"+i,cnt[i]));
+  cnum("sO",O.filter(r=>!r._bad).length);
+  $("sM").textContent=NC?"EDC tampil di peta: "+(tot-NC)+" dari "+tot+" (sisanya belum ada koordinat). ":"";
+  const qp=drawQ(mode);if(mode=="Q")lyB.clearLayers();rekap();
+  if(Q.length)$("sM").textContent+="QRIS tampil di peta: "+qs[3]+" dari "+(qs[3]+qs[5])+" (sisanya belum ada koordinat atau bermasalah).";
+  const fp=mode=="Q"?qp:mode=="E"?pts:pts.concat(qp);if(fit&&fp.length)map.fitBounds(fp,{padding:[30,30],maxZoom:14});
+}
+const RM=typeof matchMedia!="undefined"&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+function cnum(id,v){const e=$(id),f=+e.textContent||0,tok=e._a=(e._a||0)+1;
+  if(RM||typeof requestAnimationFrame=="undefined"||f==v){e.textContent=v;return}
+  const t0=performance.now();(function st(t){if(e._a!==tok)return;const p=Math.min(1,(t-t0)/500);e.textContent=Math.round(f+(v-f)*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(st)})(t0)}
+/* tampilan awal */
+$("sum").innerHTML='<div><b id="sT">0</b><span>Total EDC BRI</span></div><div style="border-color:'+CONFIG.otherColor+'"><b id="sO">0</b><span>EDC Bank Lain</span></div>'+
+  CONFIG.levels.map((l,i)=>'<div style="border-color:'+l.c+'"><b id="c'+i+'">0</b><span>'+l.k+'</span></div>').join("");
+$("sum").innerHTML+=[["Merchant QRIS","#307FE2"],[CONFIG.qLevels[0].k,CONFIG.qLevels[0].c],[CONFIG.qLevels[1].k,CONFIG.qLevels[1].c]].map((x,i)=>'<div style="border-color:'+x[1]+'"><b id="q'+i+'">0</b><span>'+x[0]+'</span></div>').join("");
+$("fQV").innerHTML='<option value="">Semua</option>'+CONFIG.qLevels.map((l,i)=>'<option value="'+i+'">'+l.k+'</option>').join("");
+$("fT").innerHTML='<option value="">Semua</option>'+CONFIG.levels.map((l,i)=>'<option value="'+i+'">'+l.k+'</option>').join("");
+$("leg").innerHTML="Sales volume: "+CONFIG.levels.map(l=>'<span class="dot" style="background:'+l.c+'"></span>'+l.k).join("")+'<span class="dot" style="background:'+CONFIG.otherColor+'"></span>Bank lain | '+CONFIG.qLevels.map(l=>'<span class="dot" style="background:'+l.c+';border-radius:2px;transform:rotate(45deg)"></span>'+l.k).join("");
+let tm;$("fT").onchange=$("fK").onchange=$("fO").onchange=$("fJ").onchange=$("fQV").onchange=()=>draw(true);$("fQ").oninput=()=>{clearTimeout(tm);tm=setTimeout(()=>draw(true),400)};
+$("dq").onclick=()=>{if(eB.length+eO.length+eQ.length+wQ.length)$("errs").style.display=$("errs").style.display=="block"?"none":"block"};
+function fromWB(wb){const c=x=>XLSX.utils.sheet_to_csv(wb.Sheets[x],{rawNumbers:true}),n=wb.SheetNames,f=re=>n.find(x=>re.test(x)),
+  sk=f(/koordinat/i),sq=n.find(x=>/qris/i.test(x)&&x!=sk),so=f(/lain|other/i),sx=[sk,sq,so],
+  sb=n.find(x=>/bri|edc/i.test(x)&&!sx.includes(x))||n.find(x=>!sx.includes(x)&&!/petunjuk/i.test(x));
+  return{b:c(sb),o:so?c(so):null,q:sq?c(sq):null,c:sk?c(sk):null}}
+function applyWB(x,d){loadB(x.b,d);if(x.o!=null)loadO(x.o);setCoords(x.c);if(x.q!=null)loadQ(x.q);else{status();draw(true)}}
+$("file").onchange=async e=>{const fs=[...e.target.files];if(!fs.length)return;let x=null,bt=null,ct=null,d=new Date(fs[0].lastModified);
+  for(const f of fs){if(/\.xls[xm]?$/i.test(f.name)){x=fromWB(XLSX.read(await f.arrayBuffer(),{type:"array"}));d=new Date(f.lastModified)}
+    else if(/koordinat|hasil/i.test(f.name))ct=await f.text();else{bt=await f.text();d=new Date(f.lastModified)}}
+  if(!x)x={b:bt,o:null,q:null,c:null};if(ct!=null)x.c=ct;applyWB(x,d)};
+function startCSV(){fetch(CONFIG.csv).then(r=>{if(!r.ok)throw 0;const lm=r.headers.get("Last-Modified");return r.text().then(t=>loadB(t,lm?new Date(lm):new Date()))})
+ .then(()=>fetch(CONFIG.csvOther)).then(r=>{if(!r.ok)throw 0;return r.text()}).then(loadO)
+ .catch(()=>{if(!map)$("msg").innerHTML="Pilih file data (Excel/CSV) pada kolom <b>Data (Excel .xlsx atau CSV)</b> di atas untuk menampilkan peta."})}
+fetch(CONFIG.xlsx).then(r=>{if(!r.ok)throw 0;const lm=r.headers.get("Last-Modified");return r.arrayBuffer().then(async ab=>{const x=fromWB(XLSX.read(ab,{type:"array"}));
+  try{const c=await fetch("koordinat_hasil.csv");if(c.ok)x.c=await c.text()}catch(_){}
+  applyWB(x,lm?new Date(lm):new Date())})}).catch(startCSV);
+</script></body></html>
