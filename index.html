@@ -202,7 +202,7 @@ function rekap(){const k={},u={};
   const bs=B.filter(r=>r._bad||r._nc).map(r=>["EDC BRI",r.NAMA_MERCHANT,r.TID,r.KECAMATAN,r._bad?r._why:"koordinat belum ada"]),
     os=O.filter(r=>r._bad||r._nc).map(r=>["EDC Bank Lain",r.NAMA_MERCHANT||"-",r.BANK,"-",r._bad?r._why:"koordinat belum ada"]),
     qs=Q.filter(r=>r._cat!="M").map(r=>["QRIS",r.NAMA_MERCHANT,r.MERCHANT_ID,r.KECAMATAN,r._why]),all=bs.concat(os,qs);
-  $("unmS").textContent="Perlu koordinat / pemeriksaan ("+all.length+": EDC BRI "+bs.length+" · Bank Lain "+os.length+" · QRIS "+qs.length+")";
+  $("unmS").textContent="Data tidak lengkap ("+all.length+": EDC BRI "+bs.length+" · Bank Lain "+os.length+" · QRIS "+qs.length+")";
   $("unmL").innerHTML=all.length?t(["Sumber","Nama Merchant","TID / Bank / Merchant ID","Kecamatan","Keterangan"],all):"Tidak ada."}
 function loadO(t){O=parseCSV(t);eO=validate(O,REQO,"[Bank lain] ");if(map){status();draw(false)}else pendingO=true}
 let pendingO=false;
